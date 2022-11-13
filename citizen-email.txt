@@ -1,0 +1,8 @@
+Hi {FULLNAME},<br>
+<br>
+Your plan {PLANNAME} is {PLANSTATUS}.<br>
+<br>
+Please find the Notice in the attachment<br>
+<br>
+Thanks,<br>
+DHS
