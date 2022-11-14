@@ -9,6 +9,10 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -55,8 +59,8 @@ public class CoTriggerServiceImpl implements CoTriggerService {
 	public CoResponse processPendingTriggers() {
 		//EligibilityEntity eentity = null;
 		//CitizenDetailsEntity centity = null;
-		Long success = 0l;
-		Long failed = 0l;
+		 Long success = 0l;
+		 Long failed = 0l;
 		
 		CoResponse response = new CoResponse();
 		//get all pending triggers
@@ -66,13 +70,23 @@ public class CoTriggerServiceImpl implements CoTriggerService {
 		if(!coentities.isEmpty()) {
 			//process each pending trigger
 		for(CoTrigger coentity : coentities) {
-			try {
-				processTrigger(coentity);
-				success++;
-			} catch (Exception e) {
-				e.printStackTrace();
-				failed++;
-			}
+			//applying multithreading by using executor service
+			ExecutorService executorService = Executors.newFixedThreadPool(5);
+			ExecutorCompletionService<Object> pool = new ExecutorCompletionService<>(executorService);
+			pool.submit(new Callable<Object>() {
+
+				@Override
+				public Object call() throws Exception {
+					try {
+						processTrigger(coentity);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					return null;
+				}
+				
+			});
+			
 		}
 		
 		//set success count
@@ -183,11 +197,11 @@ public class CoTriggerServiceImpl implements CoTriggerService {
 		pdfWriter.flush();
 		
 		//sending email
-		String mailBody = getMailBody(holderName, planName, planStatus, file1);
+		//String mailBody = getMailBody(holderName, planName, planStatus, file1);
 		
-		eutils.sendEmail(centity.getEmail(), subject, mailBody, file);
+		//eutils.sendEmail(centity.getEmail(), subject, mailBody, file);
 		updateTrigger(eentity.getCaseNum(), file);
-		file.delete();
+		//file.delete();
     }
     
     private String getMailBody(String holderName, String planName, String planStatus, String filename) {
